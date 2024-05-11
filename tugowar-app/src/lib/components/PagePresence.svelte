@@ -3,7 +3,6 @@
   import { onMount, getContext } from 'svelte';
   import { page } from '$app/stores';
   import ProvidersList from '$lib/components/ProvidersList.svelte';
-  import { namedProviderRoute } from '$lib/chains/supportedproviders.js';
 	import { ethers } from 'ethers';
 
   import tugawarSol from "$lib/abi/TugAWar.json";
@@ -56,18 +55,15 @@
     if (!presence?.providerSwitch) return;
     console.log(`PagePresence# refreshing login status`);
     const connectedName = await presence.providerSwitch.refreshLoginStatus(true);
-    const routedID = namedProviderRoute($page);
-    if (!(connectedName || routedID)) return;
+    if (!connectedName) return;
 
     // The web3auth provider remains connected until explicitly logged out. But
     // we want to prefer the routed provider for the presence selection
     let routedProvider, connectedProvider;
     for (const p of providers) {
-      if (routedID && !routedProvider && p.id === routedID) routedProvider = p;
-      if (!connectedProvider && p.id === connectedName) connectedProvider = p;
-      if (connectedProvider && (!routedID || routedProvider)) break;
+      if (p.id === connectedName) return p;
     }
-    return routedProvider ?? connectedProvider;
+    throw new Error('connected with unknown provider');
   }
 
   onMount(async () => {

@@ -1,38 +1,5 @@
 import { ProviderType } from '../chainkit/providertypes.js';
 
-export function namedProviderRoute(page) {
-  if (typeof page?.url?.pathname !== "string") return undefined;
-
-  const segments = page.url.pathname.split("/");
-  const qProvider = page.url.searchParams.get("provider");
-
-  // If the provider is supplied as a query parameter, don't attempt to find it in the path.
-  if (qProvider) {
-    // a) path/addressOrIndex
-    // b) path/
-    let candidate = segments.pop();
-    if (candidate.startsWith("0x"))
-      return `${qProvider}/${candidate}`;
-    if (!Number.isNaN(Number(candidate)))
-      return `${qProvider}/${candidate}`;
-    return qProvider;
-  }
-
-  // syntax:
-  // a) path/provider/addressOrIndex
-  // b) path/provider
-  let addressOrIndex;
-  let candidate = segments.pop();
-  if (typeof candidate === 'undefined')  return;
-  if (candidate in all) return candidate;
-  addressOrIndex = candidate;
-  candidate = segments.pop();
-  if (typeof candidate === 'undefined')  return;
-  // note: for providers that don't support account selection addressOrIndex will be 'default'
-  if (candidate in all) return `${candidate}/${addressOrIndex}`;
-  return undefined;
-}
-
 export const all = {};
 all['redstone'] = {
   name: 'redstone',

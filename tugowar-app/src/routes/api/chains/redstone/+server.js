@@ -3,14 +3,21 @@ import { env as secrets } from '$env/dynamic/private';
 import { json } from '$lib/server/request.js';
 
 export function GET() {
+  const chainId = Number(env['PUBLIC_REDSTONE_CHAINID']);
+  let chainIdHex = chainId.toString(16);
+  // 0x prefixed, but not padded is the required native format
+  chainIdHex = '0x' + chainIdHex;
+
   const chain = {
     name: 'redstone',
     description: 'Redstone',
     chainConfig: {
+      chainId: chainIdHex,
+      // chainId,
       chainNamespace: 'eip155'
     },
     currency: 'ETH',
-    chainId: Number(env['PUBLIC_REDSTONE_CHAINID']),
+    chainId: chainId,
     polling: env['PUBLIC_REDSTONE_POLLING'] ?? 2000,
     arenaProxy: env['PUBLIC_REDSTONE_TUGAWAR_ADDRESS'],
     arenaDeployer: env['PUBLIC_REDSTONE_TUGAWAR_DEPLOYER'],

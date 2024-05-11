@@ -66,7 +66,8 @@ export class Web3AuthModalProviderSwitchAbstract extends ProviderSwitch {
       this.current = name;
       return newCtx;
     }
-    chainId = ethers.utils.hexlify(chainId);
+    if (typeof chainId == "number")
+      chainId = ethers.utils.hexlify(chainId);
 
     log.info(`Web3ModalProviderSwitch#select: selecting ${name} ${chainId}`);
     if (!this.isLoggedIn()) {

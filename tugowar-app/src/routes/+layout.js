@@ -3,10 +3,8 @@ import * as env from '$env/static/public';
 export function load({params, url, route}) {
   return {
     arenaAddress:{
-      "redstone": env['PUBLIC_REDSTONE_TUGAWAR_ADDRESS'] ?? '',
-      "op-garnet": env['PUBLIC_OP_GARNET_TUGAWAR_ADDRESS'] ?? '',
-      "op-sepolia": env['PUBLIC_OP_SEPOLIA_TUGAWAR_ADDRESS'] ?? '',
-      "local": env['PUBLIC_LOCAL_TUGAWAR_ADDRESS'] ?? '',
+      "redstone": env['PUBLIC_REDSTONE_TUGAWAR_ADDR'] ?? '',
+      "local": env['PUBLIC_LOCAL_TUGAWAR_ADDR'] ?? '',
     },
     request: {
       href:url.href,
