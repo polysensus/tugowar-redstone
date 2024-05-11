@@ -1,6 +1,17 @@
 [profile.default]
 src = "src"
 out = "out"
-libs = ["lib"]
+libs = ["node_modules", "lib"]
+[rpc_endpoints]
+local = "http://localhost:8545"
+rpc = "http://localhost:8545"
+garnet = "${GARNET_RPC_URL}"
+redstone = "${REDSTONE_RPC_URL}"
+
+[profile.garnet.rpc_endpoints]
+rpc = "${GARNET_RPC_URL}"
+
+[profile.redstone.rpc_endpoints]
+rpc = "${REDSTONE_RPC_URL}"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
