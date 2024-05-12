@@ -39,6 +39,7 @@ contract CreateZoneAccountsScript is DeployScriptBase {
     address EIP6551_REGISTRY = vm.envAddress("ERC6551_REGISTRY");
     address payable EIP6551_ACCOUNT_IMLEMENTATION_ADDRESS = payable(vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));
     address DS_ZONE_ADDR = vm.envAddress("DS_ZONE_ADDR");
+    address DS_TOKEN_ADDR = vm.envAddress("DS_TOKEN_ADDR");
 
     // todo: we could check the accounts exist rather than expecting the caller
     // to know
@@ -57,10 +58,11 @@ contract CreateZoneAccountsScript is DeployScriptBase {
       address zoneAccountAddress = registry.createAccount(
         address(accountImplementation), deploymentSalt, block.chainid,
         DS_ZONE_ADDR, id);
-      bool ok = IERC165(zoneAccountAddress).supportsInterface(type(IERC6551LastExecutor).interfaceId);
-      if (!ok) revert('wtf');
-
       console.log("zoneAccount:", id, zoneAccountAddress);
+      address tokenAccountAddress = registry.createAccount(
+        address(accountImplementation), deploymentSalt, block.chainid,
+        DS_TOKEN_ADDR, id);
+      console.log("tokenAccount:", id, tokenAccountAddress);
     }
   }
 }

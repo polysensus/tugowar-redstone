@@ -8,6 +8,7 @@
   // framework imports
   import { setContext, getContext } from 'svelte';
   import { readable, writable, derived } from 'svelte/store';
+  import { clipboard } from '@skeletonlabs/skeleton';
 
   // framework components
 
@@ -53,6 +54,7 @@
   $: marker = $active?.marker;
   $: tokenId = $active?.tokenId;
   $: isGameRunning = typeof marker !== 'undefined' && marker > 5 && marker < 15;
+  $: boundAddr = $boundToken?.bound;
 
 
   let boundToken = writable();
@@ -174,7 +176,10 @@ async function joinSide(side) {
 	    <!-- <header class="card-header">(header)</header> -->
 	    <section class="p-4"><input class="input" title="tokenId" type="number" on:input={(e) => refreshBoundAccount(e.target.value)}/></section>
       {#if $boundToken?.bound}
-	    <footer class="card-footer">{$boundToken?.bound}</footer>
+	    <footer class="card-footer">
+      <p class="invisible w-0" data-clipboard="boundAddress">{boundAddr}</p>
+      <button use:clipboard={{ element: 'boundAddress' }}>{boundAddr}</button>
+      </footer>
       {/if}
     </div>
     {#if (gid)}
