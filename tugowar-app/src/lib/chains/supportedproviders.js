@@ -34,6 +34,19 @@ all['op-sepolia-rpc'] = {
   fetch: true
 };*/
 
+// WARNING: ASSUMES FORKED anvil instance
+const redstoneChainId = 690;
+let redstoneChainIdHex = redstoneChainId.toString(16);
+// 0x prefixed, but not padded is the required native format
+redstoneChainIdHex = '0x' + redstoneChainIdHex;
+
+all['fork'] = {
+  name: 'fork',
+  type: ProviderType.Web3AuthModal,
+  fetch: true
+};
+
+/*
 all['local'] = {
   name: 'local',
   type: ProviderType.Hardhat,
@@ -53,7 +66,7 @@ all['local'] = {
     // same-origin appear to be fine
     skipFetchSetup: true
   }
-};
+};*/
 
 export const testNetworks = {
   local: all.local
