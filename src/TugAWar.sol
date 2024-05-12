@@ -4,25 +4,16 @@ pragma solidity ^0.8.13;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ERC6551AccountLib} from "erc6551/lib/ERC6551AccountLib.sol";
 import {IERC6551Account} from "erc6551/interfaces/IERC6551Account.sol";
-import {console} from "forge-std/Test.sol";
+import "forge-std/console.sol";
+import "./constant.sol";
+import "./errors.sol";
 
-uint256 constant startLine = 10;
-uint256 constant hiLine = 15;
-uint256 constant loLine = 5;
+import {SideInit, Game, LibGame} from "./LibGame.sol";
 
-// if deployed the standard way using nick's method, the regsitry is at the
-// same address on all chains (and has no owner). There is no requirement to
-// use that registry however. We use foundry fork tests to deal with this
-address constant EIP6551_REGISTRY = address(0x000000006551c19487814612e58FE06813775758);
-
-struct GameResult {
-  address winner;
-  address finalLightPlayer;
-  address finalDarkPlayer;
-
-  // TODO: leader board based on blocks to complete the tug 'a war
-  // uint256 numBlocks;
-}
+event SideJoined(uint256 indexed gid, address indexed bound, uint256 indexed tokenId, address token);
+event GameStarted(
+  uint256 indexed gid, SideInit lightInit, SideInit darkInit);
+// TODO: event when we see a change in holder of the tokenId's
 
 // TugAWar is a game that can only be played if you are a holder of a
 // Downstream Zone 721 token
@@ -40,6 +31,8 @@ struct GameResult {
 // We think we can probably do ticket based escrow for Primordia using this but
 // probably wont get that done today.
 contract TugAWar {
+
+    using LibGame for Game;
     uint256 public nextGame;
 
     uint256 lightPlayerTokenId;
@@ -59,9 +52,10 @@ contract TugAWar {
     // of the reference account implementation
     address allowedAccountImplementation;
     
-    // maps winner address to the result
-    GameResult []results;
-    mapping(address => uint256) winners;
+    Game []games;
+    // maps tokenId's to games, each running game will have an entry in here
+    // for each side.
+    mapping (uint256 => uint256) tokenGames;
 
     uint256 aatest;
 
@@ -71,7 +65,7 @@ contract TugAWar {
       allowedAccountImplementation = allowedAccountImplementation_;
 
       nextGame = 1;
-      results.push();
+      games.push(); // gids are 1 based, gid 0 is invalid
 
       // alow games to start
       marker = startLine;
@@ -83,129 +77,150 @@ contract TugAWar {
       return aatest;
     }
 
-    function getResult(uint256 i) public view returns (GameResult memory) {
-      return results[i];
+    function getGame(uint256 gid) public view returns (Game memory) {
+      return games[gid];
     }
 
-    /**
-     *
-     */
-    function getCurrentRopePosition() public view returns (uint256) {
-      return marker;
+    function getCurrentMarker(uint256 gid) public view returns (uint256) {
+      return games[gid].marker;
     }
 
-    function isGameRunning() public view returns (bool) {
-      if (lightPlayerTokenId == 0 || darkPlayerTokenId == 0)
-          return false;
-      return true;
+    function isGameRunning(uint256 gid) public view returns (bool) {
+      return games[gid].inProgress();
     }
 
-    function joinTheLight() public {
-
-      if (lightPlayerTokenId != 0) revert("there can be only one");
-
-      // check that msg.sender *is* and ERC6551 account bound to the expected
-      // account contract. 'allowedAccountImplementation' could just as well be a list or a
-      // map.
-      if (!ERC6551AccountLib.isERC6551Account(msg.sender, allowedAccountImplementation, EIP6551_REGISTRY))
-          revert("must be a token bound account from the expected token contract");
-
-      // Now that we know it is definitely an account tba, we can safely get
-      // the token Id and check the token implementation.  Note that we don't
-      // care *here* that it is *particularly* the downstream Zone implementation.
-      address tokenContract;
-      (, tokenContract, lightPlayerTokenId) = IERC6551Account(payable(msg.sender)).token();
-
-      if (tokenContract != allowedToken) revert("account asset class is not allowed");
-
-      if (lightPlayerTokenId == darkPlayerTokenId && darkPlayerTokenId != 0) revert("player accounts must be bound to different tokens");
+    // if the next game is waiting for either or both sides, returns its id
+    // otherwise return 0
+    function openGameId() public view returns (uint256) {
+      if (games[games.length - 1].canJoin())
+          return games.length - 1;
+      return 0;
     }
 
-    function joinTheDark() public {
-
-      if (darkPlayerTokenId != 0) revert("there can be only one");
-
-      // just as for joinTheLight
-      if (!ERC6551AccountLib.isERC6551Account(msg.sender, allowedAccountImplementation, EIP6551_REGISTRY)) revert("must be a token bound account from the expected token contract");
-
-      // Check the account implementation is the one we expect and allow
-      address tokenContract;
-      (, tokenContract, darkPlayerTokenId) = IERC6551Account(payable(msg.sender)).token();
-      if (tokenContract != allowedToken) revert("account asset class is not allowed");
-
-      if (darkPlayerTokenId == lightPlayerTokenId && lightPlayerTokenId != 0) revert("player accounts must be bound to different tokens");
+    function openGameSide(uint256 preferredOrZero) public view returns (uint256, uint256) {
+      uint256 gid = openGameId();
+      if (gid == 0)
+        return (0, 0);
+      return (gid, games[gid].openSide(preferredOrZero));
     }
 
-    function _senderHoldsRequiredToken(uint256 requiredTokenId) internal view returns (bool) {
+    function joinSide(uint256 preferredOrZero) public {
 
-      if (!ERC6551AccountLib.isERC6551Account(msg.sender, allowedAccountImplementation, EIP6551_REGISTRY)) return false;
+      (uint256 gid, uint256 side) = openGameSide(preferredOrZero);
+      if (gid == 0)
+        side = preferredOrZero;
+      // If there are no open games, the default is dark. Otherwise
+      // openGameSide will have chosen a default.
+      if (gid == 0 && side == 0)
+        side = darkSide;
+
+      if (side != lightSide && side != darkSide) revert InvalidSide(side);
+
+      address accImpl = requireSenderAccountImpl(msg.sender);
       (, address tokenContract, uint256 tokenId) = IERC6551Account(payable(msg.sender)).token();
-      if (tokenContract != allowedToken) revert("account asset class is not allowed");
 
-      if (tokenId != requiredTokenId) return false;
-      return true;
+      // Multiple games are supported, but a single tba can only be active in
+      // one game at a time.
+      if (tokenGames[gid] != 0) revert OtherGameIncomplete();
+
+      if (gid == 0) {
+        // the most recently created game has been joined by both the dark and
+        // the light
+        games.push();
+        gid = games.length - 1;
+      }
+      Game storage g = games[gid];
+      g.join(side, accImpl, tokenContract, tokenId); // will revert if side is already joined
+
+      SideInit storage s = g.getSideInit(side);
+      tokenGames[s.tokenId] = gid;
+
+      emit SideJoined(gid, msg.sender, tokenId, tokenContract);
+      if (g.marker != 0)
+        emit GameStarted(gid, g.light, g.dark);
+    }
+
+    function requireActiveGameTokenHolder() internal view returns (uint256, uint256) {
+      requireSenderAccountImpl(msg.sender);
+      (, /*address tokenContract*/, uint256 tokenId) = IERC6551Account(payable(msg.sender)).token();
+
+      uint256 gid = tokenGames[tokenId];
+
+      if (gid == 0) revert NotActiveInGame(tokenId);
+
+      return (gid, tokenId);
     }
 
     // First one to the line wins, the light player heads to the light (up)
     function Add() public {
 
-      if (lightPlayerTokenId == 0) revert("join the game fist");
-      if (darkPlayerTokenId == 0) revert("match not ready");
+      (uint256 gid, uint256 tokenId) = requireActiveGameTokenHolder();
 
-      if (!_senderHoldsRequiredToken(lightPlayerTokenId)) revert("you must be the light player");
+      Game storage g = games[gid];
+
+      if (g.light.tokenId != tokenId)
+        revert NotInTheLight(gid, tokenId);
+
+      if (g.dark.joinSender == address(0))
+        revert GameNotStarted(gid);
 
       // avoids weird states, shouldn't happen
-      if (marker >= hiLine || marker <= loLine) revert("game over");
+      if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
 
       marker += 1;
       if (marker < hiLine)
         return;
 
-      _declareWinner();
+      g.declareWinner();
+
+      tokenGames[tokenId] = 0;
+      tokenGames[g.dark.tokenId] = 0;
     }
 
-    // First one to the line wins, the dark player heads to the depths of hades (down)
     function Sub() public {
 
-      if (darkPlayerTokenId == 0) revert("join the game fist");
-      if (lightPlayerTokenId == 0) revert("match not ready");
+      (uint256 gid, uint256 tokenId) = requireActiveGameTokenHolder();
 
-      if (!_senderHoldsRequiredToken(darkPlayerTokenId)) revert("you must be the dark player");
+      Game storage g = games[gid];
+
+      if (g.dark.tokenId != tokenId)
+        revert NotInTheDark(gid, tokenId);
+
+      if (g.light.joinSender == address(0))
+        revert GameNotStarted(gid);
 
       // avoids weird states, shouldn't happen
-      if (marker >= hiLine || marker <= loLine) revert("game over");
+      if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
 
       marker -= 1;
-      if (marker != loLine) 
+      if (marker > loLine)
         return;
 
-      _declareWinner();
+      g.declareWinner();
+
+      tokenGames[tokenId] = 0;
+      tokenGames[g.light.tokenId] = 0;
     }
 
-    function _declareWinner() internal {
+    function checkSenderAccountImpl(address sender) internal view returns (bool, address) {
+      if (!ERC6551AccountLib.isERC6551Account(
+        sender, allowedAccountImplementation, EIP6551_REGISTRY))
+          return (false, address(0));
+      
+      return (true, allowedAccountImplementation);
+    }
 
-      // we know msg.sender holds the winning token id
-      //
-      (, address tokenContract, uint256 winnerTokenId) = IERC6551Account(payable(msg.sender)).token();
-      if (tokenContract != allowedToken) revert("account asset class is not allowed");
+    function requireSenderAccountImpl(address sender) internal view returns (address) {
+      // check that msg.sender *is* and ERC6551 account bound to the expected
+      // account contract. 'allowedAccountImplementation' could just as well be a list or a
+      // map.
+      (bool ok, address accImpl) = checkSenderAccountImpl(sender);
+      if (!ok)
+          revert InvalidTBA(sender);
+      return accImpl;
+    }
 
-      // considering checks callers make this is redundant, but it makes
-      // reasoning about test fails easier
-      if (winnerTokenId != lightPlayerTokenId && winnerTokenId != darkPlayerTokenId) revert("invalid winner");
-
-      uint256 i = results.length;
-      results.push();
-
-      results[i].winner = IERC721(tokenContract).ownerOf(winnerTokenId);
-
-      results[i].finalLightPlayer = IERC721(tokenContract).ownerOf(lightPlayerTokenId);
-      results[i].finalDarkPlayer = IERC721(tokenContract).ownerOf(darkPlayerTokenId);
-
-      // Let a new game start
-      lightPlayerTokenId = 0;
-      darkPlayerTokenId = 0;
-
-      marker = startLine;
-      nextGame += 1;
+    function requireAllowedToken(address tokenContract) internal view {
+      if (tokenContract != allowedToken) revert InvalidToken(tokenContract);
     }
 }

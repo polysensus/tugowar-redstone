@@ -5,7 +5,7 @@ libs = ["node_modules", "lib"]
 [rpc_endpoints]
 local = "http://localhost:8545"
 rpc = "http://localhost:8545"
-redstone = "${PUBLIC_REDSTONE_RPC_URL}"
+redstone = "${PUBLIC_REDSTONE_URL}"
 
 [profile.redstone.rpc_endpoints]
-rpc = "${PUBLIC_REDSTONE_RPC_URL}"
+rpc = "${PUBLIC_REDSTONE_URL}"
