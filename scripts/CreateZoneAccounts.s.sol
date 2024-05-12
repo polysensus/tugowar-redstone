@@ -2,9 +2,12 @@
 pragma solidity ^0.8.13;
 
 import {console} from "forge-std/Script.sol";
-import {DeployScriptBase} from "./DeployScriptBase.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {IERC6551LastExecutor} from "src/IERC6551LastExecutor.sol";
 import {IERC6551Registry} from "erc6551/interfaces/IERC6551Registry.sol";
 import {ERC6551Account} from "src/ERC6551Account.sol";
+
+import {DeployScriptBase} from "./DeployScriptBase.sol";
 import {TugAWar} from "src/TugAWar.sol";
 
 // The token bound accounts for the zone tokens need to be created
@@ -54,6 +57,8 @@ contract CreateZoneAccountsScript is DeployScriptBase {
       address zoneAccountAddress = registry.createAccount(
         address(accountImplementation), deploymentSalt, block.chainid,
         DS_ZONE_ADDR, id);
+      bool ok = IERC165(zoneAccountAddress).supportsInterface(type(IERC6551LastExecutor).interfaceId);
+      if (!ok) revert('wtf');
 
       console.log("zoneAccount:", id, zoneAccountAddress);
     }

@@ -36,6 +36,7 @@
 </script>
   <div class="h-56 grid content-center">
   <h2 class="h2 flex justify-center">Tug of War: Redstone Composability Hack</h2>
+  <h2 class="h3 flex justify-center">(Attack of the Sybils)</h2>
   <div class="flex justify-center gap-4">
     <button type="button" class="btn btn-sm preset-filled">Small</button>
     <button type="button" class="btn btn-sm preset-filled">Large</button>

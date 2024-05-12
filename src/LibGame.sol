@@ -83,6 +83,14 @@ library LibGame {
         revert ("token does not match either side");
     }
 
+    function getWinSide(Game storage g) internal view returns (SideInit storage) {
+      if (g.winningSide == lightSide)
+        return g.light;
+      if (g.winningSide == darkSide)
+        return g.dark;
+      revert InvalidSide(g.winningSide);
+    }
+
     function join(Game storage g, uint256 side, address accImpl, address token, uint256 tokenId, address holder) internal {
       SideInit storage s = g.getSideInit(side);
       if (s.joinSender != address(0))

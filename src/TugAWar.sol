@@ -85,6 +85,46 @@ contract TugAWar {
       return games[gid].marker;
     }
 
+    /**
+     * @dev returns the gid, the time (in blocks), the number of pulls to win, the wining side, the wining token and
+     * the holder of the token on the winning pull.
+     *
+     * If the argument gid is zero, the latest game is chosen
+     *
+     * Reverts if the game doesn't exist
+     * Returns all 0's if the game is not complete
+     */
+    function getWin(uint256 gid) public view returns (uint256, uint256, uint256, uint256, uint256, address) {
+      if (gid == 0)
+        gid = games.length - 1;
+      Game storage g = games[gid];
+
+      if (g.winnerId == 0)
+        return (0, 0, 0, 0, 0, address(0));
+
+      SideInit storage s = g.getWinSide();
+
+      uint256 duration = g.victoryBlock - g.firstBlock;
+      address winner = s.holders[s.holders.length-1];
+
+      // the pulls is length - 1 to account for the join address being the
+      // first entry in the holders array
+      return (gid, duration, s.holders.length - 1, s.side, s.tokenId, winner);
+    }
+
+    function getWinner(uint256 gid) public view returns (uint256, address) {
+      if (gid == 0)
+        gid = games.length - 1;
+      Game storage g = games[gid];
+
+      if (g.winnerId == 0)
+        return (0, address(0));
+
+      SideInit storage s = g.getWinSide();
+
+      return (gid, s.holders[s.holders.length-1]);
+    }
+
     function isGameRunning(uint256 gid) public view returns (bool) {
       return games[gid].inProgress();
     }
