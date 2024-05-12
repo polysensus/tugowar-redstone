@@ -22,10 +22,6 @@ For this hack we want to show better cross game interop:
 * Show that the puller of the rope changes if you transfer your downstream item
   to someone else (another player or any other wallet)
 
-Before the hack we:
+Before the hack we did some preparitory work
+in [this repo](https://github.com/polysensus/tugowar/commit/877c96f6b82ba6f34d26387d5e244ff2d04e3ef5)
 
-* Set up a basic web ui with wallet support
-* Pipe cleaned deployment to redstone with our original contracts
-* Prepared our basic bill board plugin and tested it locally
-* Tried to get AA infra going and it didn't work out in time.
-* This commit was our starting point: 877c96f6b82ba6f34d26387d5e244ff2d04e3ef5
