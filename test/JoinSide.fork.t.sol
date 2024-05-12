@@ -111,4 +111,27 @@ contract JoinSideTest is ForkTestBase {
     // both should be able to join a new game now
     joinBoth();
   }
+
+  function test_winThenJoinThenWinAgain() public {
+    joinBoth();
+    // pull 4 times
+    polyPullLight();
+    polyPullLight();
+    polyPullLight();
+    polyPullLight();
+    vm.expectEmit(true, true, true, false);
+    emit Victory(uint256(1), polyTokenId, 1);
+    polyPullLight();
+
+    // both should be able to join a new game now
+    joinBoth();
+
+    knightPullDark();
+    knightPullDark();
+    knightPullDark();
+    knightPullDark();
+    vm.expectEmit(true, true, true, false);
+    emit Victory(uint256(2), darkTokenId, 2);
+    knightPullDark();
+  }
 }
