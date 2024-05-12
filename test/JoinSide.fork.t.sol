@@ -8,42 +8,18 @@ import  {ForkTestBase} from "./ForkTestBase.sol";
 
 import {ERC6551Account} from "src/ERC6551Account.sol";
 
-import {TugAWar, SideInit, SideJoined, GameStarted} from "src/TugAWar.sol";
+import {TugAWar, SideInit, SideJoined, GameStarted, Victory} from "src/TugAWar.sol";
 
 
 contract JoinSideTest is ForkTestBase {
 
-  TugAWar taw;
-  uint256 polyTokenId;
-  address polyBound;
-  address polyPub;
-  uint256 dailyTokenId;
-  address dailyBound;
-  address dailyPub;
-
-  uint256 darkTokenId;
-  address darkBound;
-  address darkPub;
-
   function setUp() public override {
     super.setUp();
-    taw = new TugAWar(
-      vm.envAddress("DS_ZONE_ADDR"),
-      vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));
-    console.log(address(taw));
 
-    polyTokenId = vm.envUint("POLYZONE_TOKENID");
-    polyBound = vm.envAddress("POLYZONE_BOUND");
-    polyPub = vm.envAddress("POLYZONE_PUB");
-
-    dailyTokenId = vm.envUint("DAILYZONE_TOKENID");
-    dailyBound = vm.envAddress("DAILYZONE_BOUND");
-    dailyPub = vm.envAddress("DAILYZONE_PUB");
-
-    darkTokenId = vm.envUint("DARKZONE_TOKENID");
-    darkBound = vm.envAddress("DARKZONE_BOUND");
-    darkPub = vm.envAddress("DARKZONE_PUB");
+    createTAW();
+    readAccountEnvAll();
   }
+
   function test_joinDefaultSide() public {
     if (!forkEnabled()) return;
 
@@ -119,5 +95,20 @@ contract JoinSideTest is ForkTestBase {
     vm.startPrank(darkPub);
     vm.expectRevert();
     boundCall(dailyBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(2)));
+  }
+
+  function test_winThenJoinAgain() public {
+    joinBoth();
+    // pull 4 times
+    polyPullLight();
+    polyPullLight();
+    polyPullLight();
+    polyPullLight();
+    vm.expectEmit(true, true, true, false);
+    emit Victory(uint256(1), polyTokenId, 1);
+    polyPullLight();
+
+    // both should be able to join a new game now
+    joinBoth();
   }
 }

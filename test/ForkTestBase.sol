@@ -8,6 +8,7 @@ import {ERC6551Account} from "src/ERC6551Account.sol";
 import {IERC6551Account} from "erc6551/interfaces/IERC6551Account.sol";
 import {IERC6551Registry} from "erc6551/interfaces/IERC6551Registry.sol";
 
+import {TugAWar} from "src/TugAWar.sol";
 
 contract ForkTestBase is Test {
 
@@ -15,9 +16,17 @@ contract ForkTestBase is Test {
   uint256 FORK_BLOCK = vm.envOr("FORK_BLOCK", uint256(0));
   uint256 fork;
 
-  function forkEnabled() internal view returns (bool) {
-      return vm.envOr("ENABLE_FORK_TESTS", false);
-  }
+  TugAWar taw;
+  uint256 polyTokenId;
+  address polyBound;
+  address polyPub;
+  uint256 dailyTokenId;
+  address dailyBound;
+  address dailyPub;
+
+  uint256 darkTokenId;
+  address darkBound;
+  address darkPub;
 
   function setUp() public virtual {
       if (!forkEnabled()) return;
@@ -26,8 +35,77 @@ contract ForkTestBase is Test {
       vm.selectFork(fork);
   }
 
-  function boundCall(address bound, address tugawar, bytes memory encodedCall) internal {
-      ERC6551Account(payable(bound)).execute(payable(tugawar), 0, encodedCall, 0);
+  function polyJoinLight() internal {
+    vm.startPrank(polyPub);
+    boundCall(polyBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(1)));
+    vm.stopPrank();
+  }
+
+  function dailyJoinLight() internal {
+    vm.startPrank(dailyPub);
+    boundCall(dailyBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(1)));
+    vm.stopPrank();
+  }
+
+  function knightJoinDark() internal {
+    vm.startPrank(darkPub);
+    boundCall(darkBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(2)));
+  }
+
+  function polyPullLight() internal {
+    vm.startPrank(polyPub);
+    boundCall(polyBound, address(taw), abi.encodeWithSignature("Add()"));
+    vm.stopPrank();
+  }
+
+  function knightPullDark() internal {
+    vm.startPrank(darkPub);
+    boundCall(darkBound, address(taw), abi.encodeWithSignature("Sub()"));
+    vm.stopPrank();
+  }
+
+  function joinBoth() internal {
+    polyJoinLight();
+    knightJoinDark();
+  }
+
+  function createTAW() internal {
+    taw = new TugAWar(
+      vm.envAddress("DS_ZONE_ADDR"),
+      vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));
+    console.log(address(taw));
+  }
+
+  function readAccountEnvPoly() internal {
+    polyTokenId = vm.envUint("POLYZONE_TOKENID");
+    polyBound = vm.envAddress("POLYZONE_BOUND");
+    polyPub = vm.envAddress("POLYZONE_PUB");
+  }
+
+  function readAccountEnvDaily() internal {
+    dailyTokenId = vm.envUint("DAILYZONE_TOKENID");
+    dailyBound = vm.envAddress("DAILYZONE_BOUND");
+    dailyPub = vm.envAddress("DAILYZONE_PUB");
+  }
+
+  function readAccountEnvDark() internal {
+    darkTokenId = vm.envUint("DARKZONE_TOKENID");
+    darkBound = vm.envAddress("DARKZONE_BOUND");
+    darkPub = vm.envAddress("DARKZONE_PUB");
+  }
+
+  function readAccountEnvAll () internal {
+    readAccountEnvPoly();
+    readAccountEnvDaily();
+    readAccountEnvDark();
+  }
+
+  function forkEnabled() internal view returns (bool) {
+      return vm.envOr("ENABLE_FORK_TESTS", false);
+  }
+
+  function boundCall(address bound, address tugawar, bytes memory encodedCall) internal returns (bytes memory){
+      return ERC6551Account(payable(bound)).execute(payable(tugawar), 0, encodedCall, 0);
   }
 
   function createBoundAccount(uint256 tokenId) internal returns (address) {

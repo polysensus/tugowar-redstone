@@ -9,39 +9,7 @@ import {console} from "forge-std/Test.sol";
 import "./constant.sol";
 import "./errors.sol";
 
-struct SideInit {
-
-  uint256 side;
-  // the msg.sender when join was called. Useful as the starting point if
-  // tracking ownership changes during or after the session.
-
-  address joinSender;
-
-  // implementation addresse for the sides token bound account.
-  address accImpl;
-
-  // implementation adress for the token
-  address token;
-
-  uint256 tokenId;
-}
-
-struct Game {
-
-  SideInit light;
-  SideInit dark;
-  uint256 firstBlock;
-  uint256 marker;
-
-  uint256 winnerId;
-  uint256 winningSide;
-  // The owner of the token at this block one the game. It requires off chain
-  // processing of eth logs to establish that because we support ERC1155 and
-  // ownerOf isn't part of that standard. The transaction index isn't needed
-  // (or avaialbe from the EVM),there is only one wining tx per game.
-  uint256 victoryBlock;
-
-}
+import "./LibGameStructs.sol";
 
 library LibGame {
 
@@ -119,7 +87,7 @@ library LibGame {
       if (s.joinSender != address(0))
         revert ("side is already joined");
 
-      s.side = lightSide;
+      s.side = side;
       g.firstBlock = block.number;
       s.joinSender = msg.sender;
       s.accImpl = accImpl;
@@ -142,9 +110,9 @@ library LibGame {
 
       SideInit storage s = g.getTokenSideInit(winnerTokenId);
       if (s.side == lightSide && g.marker != hiLine)
-        revert ("invalid marker for light side victory");
+        revert InvalidVictoryState(s.side, g.marker);
       if (s.side == darkSide && g.marker != loLine)
-        revert ("invalid marker for dark side victory");
+        revert InvalidVictoryState(s.side, g.marker);
 
       g.winnerId = s.tokenId;
       g.winningSide = s.side;

@@ -8,12 +8,10 @@ import "forge-std/console.sol";
 import "./constant.sol";
 import "./errors.sol";
 
-import {SideInit, Game, LibGame} from "./LibGame.sol";
+import "./events.sol";
 
-event SideJoined(uint256 indexed gid, address indexed bound, uint256 indexed tokenId, address token);
-event GameStarted(
-  uint256 indexed gid, SideInit lightInit, SideInit darkInit);
-// TODO: event when we see a change in holder of the tokenId's
+import {SideInit, Game} from "./LibGameStructs.sol";
+import {LibGame} from "./LibGame.sol";
 
 // TugAWar is a game that can only be played if you are a holder of a
 // Downstream Zone 721 token
@@ -33,15 +31,6 @@ event GameStarted(
 contract TugAWar {
 
     using LibGame for Game;
-    uint256 public nextGame;
-
-    uint256 lightPlayerTokenId;
-    uint256 darkPlayerTokenId;
-
-    // TODO: leader board based on blocks to complete
-    // uint256 firstBlock;
-    // uint256 lastBlock;
-    uint256 marker;
 
     // From the PoV of Tug 'A War, the Downstream zone contract is just an ERC
     // 721 token, used to gate access.
@@ -64,11 +53,7 @@ contract TugAWar {
       allowedToken = allowedToken_;
       allowedAccountImplementation = allowedAccountImplementation_;
 
-      nextGame = 1;
       games.push(); // gids are 1 based, gid 0 is invalid
-
-      // alow games to start
-      marker = startLine;
     }
 
     // open access method to test aa sponsored gas transactions
@@ -80,6 +65,19 @@ contract TugAWar {
     function getGame(uint256 gid) public view returns (Game memory) {
       return games[gid];
     }
+    function getGame() public view returns (Game memory) {
+      requireSenderAccountImpl(msg.sender);
+      (, , uint256 tokenId) = IERC6551Account(payable(msg.sender)).token();
+      if (tokenId == 0)
+        revert AccountNotActiveInGame(msg.sender);
+
+      uint256 gid = tokenGames[tokenId];
+      if (gid == 0)
+        revert NotActiveInGame(tokenId);
+
+      return games[gid];
+    }
+
 
     function getCurrentMarker(uint256 gid) public view returns (uint256) {
       return games[gid].marker;
@@ -167,11 +165,16 @@ contract TugAWar {
       // avoids weird states, shouldn't happen
       if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
 
-      marker += 1;
-      if (marker < hiLine)
+      g.marker += 1;
+
+      emit RopePosition(gid, lightSide, g.marker);
+
+      if (g.marker < hiLine)
         return;
 
       g.declareWinner();
+
+      emit Victory(gid, tokenId, lightSide);
 
       tokenGames[tokenId] = 0;
       tokenGames[g.dark.tokenId] = 0;
@@ -192,11 +195,16 @@ contract TugAWar {
       // avoids weird states, shouldn't happen
       if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
 
-      marker -= 1;
-      if (marker > loLine)
+      g.marker -= 1;
+
+      emit RopePosition(gid, darkSide, g.marker);
+
+      if (g.marker > loLine)
         return;
 
       g.declareWinner();
+
+      emit Victory(gid, tokenId, darkSide);
 
       tokenGames[tokenId] = 0;
       tokenGames[g.light.tokenId] = 0;
