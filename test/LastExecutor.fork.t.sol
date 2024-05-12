@@ -13,7 +13,7 @@ import {IERC6551LastExecutor} from "src/IERC6551LastExecutor.sol";
 import {TugAWar, Game, SideInit, SideJoined, GameStarted, RopePosition} from "src/TugAWar.sol";
 
 
-contract AddTest is ForkTestBase {
+contract LastExecutorTest is ForkTestBase {
 
   function setUp() public override {
     if (!forkEnabled()) return;
@@ -40,17 +40,5 @@ contract AddTest is ForkTestBase {
     ok = IERC165(dailyBound).supportsInterface(type(IERC6551LastExecutor).interfaceId);
     console.log(ok);
     vm.assertEq(ok, true);
-  }
-
-  function test_Add() public {
-    if (!forkEnabled()) return;
-
-    joinBoth();
-    vm.startPrank(polyPub);
-
-    vm.expectEmit(true, true, true, false);
-    emit RopePosition(uint256(1), 1, polyPub, 11);
-    boundCall(polyBound, address(taw), abi.encodeWithSignature("Add()"));
-    vm.stopPrank();
   }
 }

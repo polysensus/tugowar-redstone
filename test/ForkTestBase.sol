@@ -55,23 +55,35 @@ contract ForkTestBase is Test {
   function knightJoinDark() internal {
     vm.startPrank(darkPub);
     boundCall(darkBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(2)));
+    vm.stopPrank();
   }
 
-  function polyPullLight() internal {
+  function polyPull() internal returns (bytes memory){
     vm.startPrank(polyPub);
-    boundCall(polyBound, address(taw), abi.encodeWithSignature("Add()"));
+    bytes memory result = boundCall(polyBound, address(taw), abi.encodeWithSignature("Pull()"));
     vm.stopPrank();
+    return result;
   }
 
-  function knightPullDark() internal {
+  function knightPull() internal returns (bytes memory){
     vm.startPrank(darkPub);
-    boundCall(darkBound, address(taw), abi.encodeWithSignature("Sub()"));
+    bytes memory result = boundCall(darkBound, address(taw), abi.encodeWithSignature("Pull()"));
     vm.stopPrank();
+    return result;
   }
 
   function joinBoth() internal {
     polyJoinLight();
     knightJoinDark();
+  }
+
+  function joinBothDefault() internal {
+    vm.startPrank(polyPub);
+    boundCall(polyBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(0)));
+    vm.stopPrank();
+    vm.startPrank(darkPub);
+    boundCall(darkBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(0)));
+    vm.stopPrank();
   }
 
   function createTAW() internal {

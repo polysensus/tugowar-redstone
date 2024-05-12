@@ -38,7 +38,7 @@
       console.log(`PagePresence# no current signer, not connected`);
       return;
     }
-
+    const signerAddress = await current.signer.getAddress();
     const address = data.arenaAddress[current.cfg.name];
     if (!address) {
       console.log(`PagePresence# no address for provider config: ${current.cfg.id} ${JSON.stringify(data.arenaAddress)}`);
@@ -47,7 +47,7 @@
     // arena.set(arenaConnect(address, current.signer));
     arena.set(new ethers.Contract(address, tugawarSol.abi, current.signer));
     lastID = current.cfg.id;
-    console.log(`PagePresence# current ${lastID} @${address}`);
+    console.log(`PagePresence# current ${lastID} @${address} signer@${signerAddress}`);
     return current.cfg;
   }
 

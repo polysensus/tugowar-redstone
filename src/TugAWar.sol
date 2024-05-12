@@ -85,6 +85,39 @@ contract TugAWar {
       return games[gid].marker;
     }
 
+    function getGameByAccount(address account) public view returns (
+      uint256, uint256, uint256, uint256, uint256, uint256) {
+
+      (uint256 gid, uint256 tokenId) = accountGameToken(account);
+      if (gid == 0)
+        return (0, 0, 0, 0, 0, 0);
+      return _getGame(gid, tokenId);
+    }
+
+    function _getGame(uint256 gid, uint256 tokenId) internal view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+      if (gid == 0)
+        gid = games.length - 1;
+      Game storage g = games[gid];
+
+      SideInit storage s;
+      if (g.light.tokenId == tokenId) {
+        s = g.light;
+      } else if (g.dark.tokenId == tokenId) {
+        s = g.dark;
+      } else
+        revert NotActiveInGame(tokenId);
+
+      uint256 duration;
+      if (g.victoryBlock != 0)
+        duration = g.victoryBlock - g.firstBlock;
+      else
+        duration = block.number - g.firstBlock;
+
+      // the pulls is length - 1 to account for the join address being the
+      // first entry in the holders array
+      return (gid, duration, s.holders.length - 1, s.side, s.tokenId, g.marker);
+    }
+
     /**
      * @dev returns the gid, the time (in blocks), the number of pulls to win, the wining side, the wining token and
      * the holder of the token on the winning pull.
@@ -181,43 +214,54 @@ contract TugAWar {
         emit GameStarted(gid, g.light, g.dark);
     }
 
-    function requireActiveGameTokenHolder() internal returns (uint256, uint256, address) {
+    function accountGameToken(address account) internal view returns (uint256, uint256) {
+
+      uint256 tokenId;
+      (bool ok,) = checkSenderAccountImpl(account);
+      if (!ok)
+        return (0, 0);
+      (, /*address tokenContract*/, tokenId) = IERC6551Account(payable(account)).token();
+      return (tokenGames[tokenId], tokenId);
+    }
+
+    function requireActiveGameToken() internal view returns (uint256, uint256) {
       requireSenderAccountImpl(msg.sender);
       (, /*address tokenContract*/, uint256 tokenId) = IERC6551Account(payable(msg.sender)).token();
 
       uint256 gid = tokenGames[tokenId];
 
       if (gid == 0) revert NotActiveInGame(tokenId);
+
+      return (gid, tokenId);
+    }
+
+    function requireActiveGameTokenHolder() internal returns (uint256, uint256, address) {
+
+      (uint256 gid, uint256 tokenId) = requireActiveGameToken();
+
+      // TODO: make this view
       address holder = IERC6551LastExecutor(msg.sender).lastExecutor(tokenId);
 
       return (gid, tokenId, holder);
     }
 
-    // First one to the line wins, the light player heads to the light (up)
-    function Add() public {
-
+    function Pull() public returns (bool) {
       (uint256 gid, uint256 tokenId, address holder) = requireActiveGameTokenHolder();
 
       Game storage g = games[gid];
 
-      if (g.add(gid, tokenId, holder))
-        return;
-
+      if (g.light.tokenId == tokenId) {
+        if (g.add(gid, tokenId, holder))
+          return true;
+        tokenGames[g.dark.tokenId] = 0;
+      } else if (g.dark.tokenId == tokenId) {
+        if (g.sub(gid, tokenId, holder))
+          return true;
+        tokenGames[g.light.tokenId] = 0;
+      } else
+        revert NotActiveInGame(tokenId);
       tokenGames[tokenId] = 0;
-      tokenGames[g.dark.tokenId] = 0;
-    }
-
-    function Sub() public {
-
-      (uint256 gid, uint256 tokenId, address holder) = requireActiveGameTokenHolder();
-
-      Game storage g = games[gid];
-
-      if (g.sub(gid, tokenId, holder))
-        return;
-
-      tokenGames[tokenId] = 0;
-      tokenGames[g.light.tokenId] = 0;
+      return false; 
     }
 
     function checkSenderAccountImpl(address sender) internal view returns (bool, address) {

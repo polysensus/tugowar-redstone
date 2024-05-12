@@ -28,7 +28,12 @@ export function GET() {
   if (env['PUBLIC_FORK_TUGAWAR_DEPLOYER'])
     chain.arenaDeployer = env['PUBLIC_FORK_TUGAWAR_DEPLOYER'];
   if (env['PUBLIC_FORK_DS_ZONE_ADDR'])
-    chain.dsZoneAddress = env['PUBLIC_FORK_DS_ZONE_ADDR'];
+    chain.dsZoneAddr = env['PUBLIC_FORK_DS_ZONE_ADDR'];
+  if (env['PUBLIC_ZONE_DS_TOKEN_ADDR'])
+    chain.dsTokenAddr = env['PUBLIC_ZONE_DS_TOKEN_ADDR'];
+  if (env['PUBLIC_ZONE_DS_GAME_ADDR'])
+    chain.dsTokenAddr = env['PUBLIC_ZONE_DS_GAME_ADDR'];
+
   if (chain.url)
     chain.chainConfig.rpcTarget = chain.url;
   if (env['PUBLIC_FORK_BRIDGE'])
@@ -38,11 +43,18 @@ export function GET() {
     chain.chainConfig.blockExplorerUrl = chain.etherscanUrl;
   }
 
+  if (env['PUBLIC_FORK_ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS'])
+    chain.accImpl = env['PUBLIC_FORK_ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS'];
+  if (env['PUBLIC_FORK_ERC6551_ACCOUNT_SALT'])
+    chain.accSalt = env['PUBLIC_FORK_ERC6551_ACCOUNT_SALT'];
+
   if (env['PUBLIC_REDSTONE_ZERODEV_PROJECT_ID']) {
     chain.zeroDevProjectId = env['PUBLIC_REDSTONE_ZERODEV_PROJECT_ID'];
     chain.bundlerUrl = env['PUBLIC_REDSTONE_BUNDLER_URL'];
     chain.payMasterUrl = env['PUBLIC_REDSTONE_PAYMASTER_URL'];
   }
+
+  console.log(JSON.stringify(chain));
 
   return json(chain);
 }

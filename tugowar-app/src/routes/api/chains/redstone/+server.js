@@ -35,6 +35,18 @@ export function GET() {
     chain.etherscanUrl = env['PUBLIC_REDSTONE_ETHERSCAN_URL'];
     chain.chainConfig.blockExplorerUrl = chain.etherscanUrl;
   }
+  if (env['PUBLIC_REDSTONE_ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS'])
+    chain.accImpl = env['PUBLIC_REDSTONE_ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS'];
+  if (env['PUBLIC_REDSTONE_ERC6551_ACCOUNT_SALT'])
+    chain.accSalt = env['PUBLIC_REDSTONE_ERC6551_ACCOUNT_SALT'];
+
+  if (env['PUBLIC_REDSTONE_DS_ZONE_ADDR'])
+    chain.dsZoneAddr = env['PUBLIC_REDSTONE_DS_ZONE_ADDR'];
+  if (env['PUBLIC_REDSTONE_DS_TOKEN_ADDR'])
+    chain.dsTokenAddr = env['PUBLIC_REDSTONE_DS_TOKEN_ADDR'];
+  if (env['PUBLIC_REDSTONE_DS_GAME_ADDR'])
+    chain.dsTokenAddr = env['PUBLIC_REDSTONE_DS_GAME_ADDR'];
+
 
   if (env['PUBLIC_REDSTONE_ZERODEV_PROJECT_ID']) {
     chain.zeroDevProjectId = env['PUBLIC_REDSTONE_ZERODEV_PROJECT_ID'];

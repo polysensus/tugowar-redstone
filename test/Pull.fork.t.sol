@@ -27,7 +27,7 @@ contract SubTest is ForkTestBase {
     vm.startPrank(darkPub);
     vm.expectEmit(true, true, true, false);
     emit RopePosition(uint256(1), 2, darkPub, 9);
-    boundCall(darkBound, address(taw), abi.encodeWithSignature("Sub()"));
+    boundCall(darkBound, address(taw), abi.encodeWithSignature("Pull()"));
     vm.stopPrank();
   }
 }

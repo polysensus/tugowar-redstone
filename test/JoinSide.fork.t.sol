@@ -100,14 +100,14 @@ contract JoinSideTest is ForkTestBase {
   function test_winThenJoinAgain() public {
     joinBoth();
     // pull 4 times
-    polyPullLight();
+    polyPull();
 
-    polyPullLight();
-    polyPullLight();
-    polyPullLight();
+    polyPull();
+    polyPull();
+    polyPull();
     vm.expectEmit(true, true, true, false);
     emit Victory(uint256(1), polyTokenId, polyPub, 1);
-    polyPullLight();
+    polyPull();
 
     // both should be able to join a new game now
     joinBoth();
@@ -116,23 +116,23 @@ contract JoinSideTest is ForkTestBase {
   function test_winThenJoinThenWinAgain() public {
     joinBoth();
     // pull 4 times
-    polyPullLight();
-    polyPullLight();
-    polyPullLight();
-    polyPullLight();
+    polyPull();
+    polyPull();
+    polyPull();
+    polyPull();
     vm.expectEmit(true, true, true, false);
     emit Victory(uint256(1), polyTokenId, polyPub,1);
-    polyPullLight();
+    polyPull();
 
     // both should be able to join a new game now
     joinBoth();
 
-    knightPullDark();
-    knightPullDark();
-    knightPullDark();
-    knightPullDark();
+    knightPull();
+    knightPull();
+    knightPull();
+    knightPull();
     vm.expectEmit(true, true, true, false);
     emit Victory(uint256(2), darkTokenId, darkPub,2);
-    knightPullDark();
+    knightPull();
   }
 }
