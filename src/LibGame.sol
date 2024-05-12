@@ -8,6 +8,7 @@ import {console} from "forge-std/Test.sol";
 
 import "./constant.sol";
 import "./errors.sol";
+import "./events.sol";
 
 import "./LibGameStructs.sol";
 
@@ -82,7 +83,7 @@ library LibGame {
         revert ("token does not match either side");
     }
 
-    function join(Game storage g, uint256 side, address accImpl, address token, uint256 tokenId) internal {
+    function join(Game storage g, uint256 side, address accImpl, address token, uint256 tokenId, address holder) internal {
       SideInit storage s = g.getSideInit(side);
       if (s.joinSender != address(0))
         revert ("side is already joined");
@@ -93,6 +94,7 @@ library LibGame {
       s.accImpl = accImpl;
       s.token = token;
       s.tokenId = tokenId;
+      s.holders.push(holder);
 
       SideInit storage o = g.getSideInit(otherSide(side));
       if (o.joinSender == address(0))
@@ -100,6 +102,56 @@ library LibGame {
 
       // both sides have joined set the rope to the start position
       g.marker = startLine;
+    }
+
+    function add(Game storage g, uint256 gid, uint256 tokenId, address holder) internal returns (bool) {
+      if (g.light.tokenId != tokenId)
+        revert NotInTheLight(gid, tokenId);
+
+      if (g.dark.joinSender == address(0))
+        revert GameNotStarted(gid);
+
+      // avoids weird states, shouldn't happen
+      if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
+
+      g.marker += 1;
+
+      g.light.holders.push(holder);
+
+      emit RopePosition(gid, lightSide, holder, g.marker);
+
+      if (g.marker < hiLine)
+        return true; // can add again
+
+      g.declareWinner();
+
+      emit Victory(gid, tokenId, holder, lightSide);
+
+      return false; // game over
+    }
+
+    function sub(Game storage g, uint256 gid, uint256 tokenId, address holder) internal returns (bool) {
+      if (g.dark.tokenId != tokenId)
+        revert NotInTheDark(gid, tokenId);
+
+      if (g.light.joinSender == address(0))
+        revert GameNotStarted(gid);
+
+      // avoids weird states, shouldn't happen
+      if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
+
+      g.marker -= 1;
+
+      g.dark.holders.push(holder);
+      emit RopePosition(gid, darkSide, holder, g.marker);
+
+      if (g.marker > loLine)
+        return true; // can sub again
+
+      g.declareWinner();
+
+      emit Victory(gid, tokenId, holder, darkSide);
+      return false; // game over
     }
 
     function declareWinner(Game storage g) internal {

@@ -4,6 +4,8 @@ pragma solidity ^0.8.13;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ERC6551AccountLib} from "erc6551/lib/ERC6551AccountLib.sol";
 import {IERC6551Account} from "erc6551/interfaces/IERC6551Account.sol";
+import {IERC6551LastExecutor} from "./IERC6551LastExecutor.sol";
+
 import "forge-std/console.sol";
 import "./constant.sol";
 import "./errors.sol";
@@ -116,6 +118,7 @@ contract TugAWar {
 
       address accImpl = requireSenderAccountImpl(msg.sender);
       (, address tokenContract, uint256 tokenId) = IERC6551Account(payable(msg.sender)).token();
+      address holder = IERC6551LastExecutor(msg.sender).lastExecutor(tokenId);
 
       // Multiple games are supported, but a single tba can only be active in
       // one game at a time.
@@ -128,7 +131,7 @@ contract TugAWar {
         gid = games.length - 1;
       }
       Game storage g = games[gid];
-      g.join(side, accImpl, tokenContract, tokenId); // will revert if side is already joined
+      g.join(side, accImpl, tokenContract, tokenId, holder); // will revert if side is already joined
 
       SideInit storage s = g.getSideInit(side);
       tokenGames[s.tokenId] = gid;
@@ -138,43 +141,27 @@ contract TugAWar {
         emit GameStarted(gid, g.light, g.dark);
     }
 
-    function requireActiveGameTokenHolder() internal view returns (uint256, uint256) {
+    function requireActiveGameTokenHolder() internal returns (uint256, uint256, address) {
       requireSenderAccountImpl(msg.sender);
       (, /*address tokenContract*/, uint256 tokenId) = IERC6551Account(payable(msg.sender)).token();
 
       uint256 gid = tokenGames[tokenId];
 
       if (gid == 0) revert NotActiveInGame(tokenId);
+      address holder = IERC6551LastExecutor(msg.sender).lastExecutor(tokenId);
 
-      return (gid, tokenId);
+      return (gid, tokenId, holder);
     }
 
     // First one to the line wins, the light player heads to the light (up)
     function Add() public {
 
-      (uint256 gid, uint256 tokenId) = requireActiveGameTokenHolder();
+      (uint256 gid, uint256 tokenId, address holder) = requireActiveGameTokenHolder();
 
       Game storage g = games[gid];
 
-      if (g.light.tokenId != tokenId)
-        revert NotInTheLight(gid, tokenId);
-
-      if (g.dark.joinSender == address(0))
-        revert GameNotStarted(gid);
-
-      // avoids weird states, shouldn't happen
-      if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
-
-      g.marker += 1;
-
-      emit RopePosition(gid, lightSide, g.marker);
-
-      if (g.marker < hiLine)
+      if (g.add(gid, tokenId, holder))
         return;
-
-      g.declareWinner();
-
-      emit Victory(gid, tokenId, lightSide);
 
       tokenGames[tokenId] = 0;
       tokenGames[g.dark.tokenId] = 0;
@@ -182,29 +169,12 @@ contract TugAWar {
 
     function Sub() public {
 
-      (uint256 gid, uint256 tokenId) = requireActiveGameTokenHolder();
+      (uint256 gid, uint256 tokenId, address holder) = requireActiveGameTokenHolder();
 
       Game storage g = games[gid];
 
-      if (g.dark.tokenId != tokenId)
-        revert NotInTheDark(gid, tokenId);
-
-      if (g.light.joinSender == address(0))
-        revert GameNotStarted(gid);
-
-      // avoids weird states, shouldn't happen
-      if (g.marker >= hiLine || g.marker <= loLine) revert GameOver(gid);
-
-      g.marker -= 1;
-
-      emit RopePosition(gid, darkSide, g.marker);
-
-      if (g.marker > loLine)
+      if (g.sub(gid, tokenId, holder))
         return;
-
-      g.declareWinner();
-
-      emit Victory(gid, tokenId, darkSide);
 
       tokenGames[tokenId] = 0;
       tokenGames[g.light.tokenId] = 0;

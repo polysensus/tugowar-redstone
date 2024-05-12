@@ -52,7 +52,7 @@ contract JoinSideTest is ForkTestBase {
     vm.expectEmit(true, true, true, false);
     emit SideJoined(uint256(1), darkBound, darkTokenId, address(0));
     vm.expectEmit(true, false, false, false);
-    emit GameStarted(uint256(1), SideInit(0, address(0), address(0), address(0), 0), SideInit(0, address(0), address(0), address(0), 0));
+    emit GameStarted(uint256(1), emptySideInit(), emptySideInit());
     boundCall(darkBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(2)));
   }
 
@@ -68,7 +68,7 @@ contract JoinSideTest is ForkTestBase {
     vm.expectEmit(true, true, true, false);
     emit SideJoined(uint256(1), darkBound, darkTokenId, address(0));
     vm.expectEmit(true, false, false, false);
-    emit GameStarted(uint256(1), SideInit(0, address(0), address(0), address(0), 0), SideInit(0, address(0), address(0), address(0), 0));
+    emit GameStarted(uint256(1), emptySideInit(), emptySideInit());
     boundCall(darkBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(2)));
 
     vm.startPrank(dailyPub);
@@ -89,7 +89,7 @@ contract JoinSideTest is ForkTestBase {
     vm.expectEmit(true, true, true, false);
     emit SideJoined(uint256(1), darkBound, darkTokenId, address(0));
     vm.expectEmit(true, false, false, false);
-    emit GameStarted(uint256(1), SideInit(0, address(0), address(0), address(0), 0), SideInit(0, address(0), address(0), address(0), 0));
+    emit GameStarted(uint256(1), emptySideInit(), emptySideInit());
     boundCall(darkBound, address(taw), abi.encodeWithSignature("joinSide(uint256)", uint256(2)));
 
     vm.startPrank(darkPub);
@@ -101,11 +101,12 @@ contract JoinSideTest is ForkTestBase {
     joinBoth();
     // pull 4 times
     polyPullLight();
+
     polyPullLight();
     polyPullLight();
     polyPullLight();
     vm.expectEmit(true, true, true, false);
-    emit Victory(uint256(1), polyTokenId, 1);
+    emit Victory(uint256(1), polyTokenId, polyPub, 1);
     polyPullLight();
 
     // both should be able to join a new game now
@@ -120,7 +121,7 @@ contract JoinSideTest is ForkTestBase {
     polyPullLight();
     polyPullLight();
     vm.expectEmit(true, true, true, false);
-    emit Victory(uint256(1), polyTokenId, 1);
+    emit Victory(uint256(1), polyTokenId, polyPub,1);
     polyPullLight();
 
     // both should be able to join a new game now
@@ -131,7 +132,7 @@ contract JoinSideTest is ForkTestBase {
     knightPullDark();
     knightPullDark();
     vm.expectEmit(true, true, true, false);
-    emit Victory(uint256(2), darkTokenId, 2);
+    emit Victory(uint256(2), darkTokenId, darkPub,2);
     knightPullDark();
   }
 }

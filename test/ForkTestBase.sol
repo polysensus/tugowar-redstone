@@ -8,7 +8,7 @@ import {ERC6551Account} from "src/ERC6551Account.sol";
 import {IERC6551Account} from "erc6551/interfaces/IERC6551Account.sol";
 import {IERC6551Registry} from "erc6551/interfaces/IERC6551Registry.sol";
 
-import {TugAWar} from "src/TugAWar.sol";
+import {SideInit, TugAWar} from "src/TugAWar.sol";
 
 contract ForkTestBase is Test {
 
@@ -33,6 +33,11 @@ contract ForkTestBase is Test {
 
       fork = vm.createFork(RPC, FORK_BLOCK);
       vm.selectFork(fork);
+  }
+
+  function emptySideInit() internal pure returns (SideInit memory) {
+    address[] memory holders;
+    return SideInit(0, address(0), address(0), address(0), 0, holders);
   }
 
   function polyJoinLight() internal {
@@ -73,6 +78,8 @@ contract ForkTestBase is Test {
     taw = new TugAWar(
       vm.envAddress("DS_ZONE_ADDR"),
       vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));
+    console.log("accImpl, taw");
+    console.log(vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));
     console.log(address(taw));
   }
 

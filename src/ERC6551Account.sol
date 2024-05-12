@@ -13,6 +13,7 @@ import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/Signa
 
 import {IERC6551Account} from "erc6551/interfaces/IERC6551Account.sol";
 import {IERC6551Executable} from "erc6551/interfaces/IERC6551Executable.sol";
+import {IERC6551LastExecutor} from "./IERC6551LastExecutor.sol";
 import {console2 as console } from "forge-std/console2.sol";
 
 contract ERC6551Account is
@@ -23,8 +24,21 @@ contract ERC6551Account is
     ERC1155Holder
 {
     uint256 public state;
+    mapping (uint256 => address) _lastExecutor;
 
     receive() external payable {}
+
+    /**
+     * @dev Return the msg.sender that most recently *successfuly* executed a
+     * call on the account Can't do ownerOf generically for ERC115. But we can
+     * track the last message sender to execute using the account.
+     *
+     * This may or may not be an EOA,  but MUST be the token holder and the
+     * signer
+     */ 
+    function lastExecutor(uint256 id) external virtual returns (address) {
+      return _lastExecutor[id];
+    }
 
     function execute(
         address to,
@@ -32,7 +46,10 @@ contract ERC6551Account is
         bytes calldata data,
         uint8 operation
     ) external payable virtual returns (bytes memory result) {
-        require(_isValidSigner(msg.sender), "Invalid signer");
+
+        (uint256 chainId, address tokenContract, uint256 tokenId) = token();
+
+        require(_isValidSigner(msg.sender, chainId, tokenContract, tokenId), "Invalid signer");
         require(operation == 0, "Only call operations are supported");
 
         ++state;
@@ -45,13 +62,20 @@ contract ERC6551Account is
                 revert(add(result, 32), mload(result))
             }
         }
+
+
+        // TODO: refactor _isValidSigner so we don't double hit on this call
+        _lastExecutor[tokenId] = msg.sender;
     }
 
     function isValidSigner(
         address signer,
         bytes calldata
     ) external view virtual returns (bytes4) {
-        if (_isValidSigner(signer)) {
+
+        (uint256 chainId, address tokenContract, uint256 tokenId) = token();
+
+        if (_isValidSigner(signer, chainId, tokenContract, tokenId)) {
             return IERC6551Account.isValidSigner.selector;
         }
 
@@ -108,6 +132,7 @@ contract ERC6551Account is
         bytes4 interfaceId
     ) public view virtual override (ERC1155Holder, IERC165) returns (bool) {
         return
+            interfaceId == type(IERC6551LastExecutor).interfaceId ||
             interfaceId == type(IERC165).interfaceId ||
             interfaceId == type(IERC6551Account).interfaceId ||
             interfaceId == type(IERC6551Executable).interfaceId ||
@@ -125,12 +150,8 @@ contract ERC6551Account is
     }
 
     function _isValidSigner(
-        address signer
+        address signer, uint256 chainId, address tokenContract, uint256 tokenId
     ) internal view virtual returns (bool) {
-        (uint256 chainId, address tokenContract, uint256 tokenId) = token();
-
-        console.log(tokenId);
-        console.log("checking block");
 
         if (chainId != block.chainid) return false;
 

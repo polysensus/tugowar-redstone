@@ -16,12 +16,17 @@ struct SideInit {
   address token;
 
   uint256 tokenId;
+
+  // the first entry is the holder that joined the game, the last, for the
+  // winning side, made the victory pull
+  address []holders;
 }
 
 struct Game {
 
   SideInit light;
   SideInit dark;
+
   uint256 firstBlock;
   uint256 marker;
 
