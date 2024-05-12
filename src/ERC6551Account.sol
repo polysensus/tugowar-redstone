@@ -36,7 +36,7 @@ contract ERC6551Account is
      * This may or may not be an EOA,  but MUST be the token holder and the
      * signer
      */ 
-    function lastExecutor(uint256 id) external virtual returns (address) {
+    function lastExecutor(uint256 id) external virtual view returns (address) {
       return _lastExecutor[id];
     }
 

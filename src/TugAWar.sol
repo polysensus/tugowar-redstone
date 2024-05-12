@@ -36,7 +36,7 @@ contract TugAWar {
 
     // From the PoV of Tug 'A War, the Downstream zone contract is just an ERC
     // 721 token, used to gate access.
-    address allowedToken;
+    address []allowedTokens;
 
     // Could have many allowed implementations. the demo one is tweaked from
     // the reference to support ERC1155, but this could be a well-known deploy
@@ -50,9 +50,10 @@ contract TugAWar {
 
     uint256 aatest;
 
-    constructor(address allowedToken_, address allowedAccountImplementation_) {
+    constructor(address[] memory allowedTokens_, address allowedAccountImplementation_) {
+      for (uint i=0;i<allowedTokens_.length; i++)
+        allowedTokens.push(allowedTokens_[i]);
 
-      allowedToken = allowedToken_;
       allowedAccountImplementation = allowedAccountImplementation_;
 
       games.push(); // gids are 1 based, gid 0 is invalid
@@ -235,7 +236,7 @@ contract TugAWar {
       return (gid, tokenId);
     }
 
-    function requireActiveGameTokenHolder() internal returns (uint256, uint256, address) {
+    function requireActiveGameTokenHolder() internal view returns (uint256, uint256, address) {
 
       (uint256 gid, uint256 tokenId) = requireActiveGameToken();
 
@@ -283,6 +284,9 @@ contract TugAWar {
     }
 
     function requireAllowedToken(address tokenContract) internal view {
-      if (tokenContract != allowedToken) revert InvalidToken(tokenContract);
+      for (uint i=0; i < allowedTokens.length; i++)
+        if(tokenContract == allowedTokens[i])
+          return;
+      revert InvalidToken(tokenContract);
     }
 }

@@ -87,8 +87,13 @@ contract ForkTestBase is Test {
   }
 
   function createTAW() internal {
+
+    address [] memory allowedTokens = new address[](2);
+    allowedTokens[0] = vm.envAddress("DS_ZONE_ADDR");
+    allowedTokens[1] = vm.envAddress("DS_TOKEN_ADDR");
+
     taw = new TugAWar(
-      vm.envAddress("DS_ZONE_ADDR"),
+      allowedTokens,
       vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));
     console.log("accImpl, taw");
     console.log(vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));

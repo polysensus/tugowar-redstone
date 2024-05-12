@@ -13,8 +13,12 @@ contract DeployTugAWarScript is DeployScriptBase {
   }
 
   function _run() public {
+
+    address [] memory allowedTokens = new address[](2);
+    allowedTokens[0] = vm.envAddress("DS_ZONE_ADDR");
+    allowedTokens[1] = vm.envAddress("DS_TOKEN_ADDR");
     TugAWar taw = new TugAWar(
-      vm.envAddress("DS_ZONE_ADDR"),
+      allowedTokens,
       vm.envAddress("ERC6551_ACCOUNT_IMLEMENTATION_ADDRESS"));
     console.log(address(taw));
   }

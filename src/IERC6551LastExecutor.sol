@@ -9,9 +9,8 @@ interface IERC6551LastExecutor {
      * track the last message sender to execute using the account.
      * This may or may not be an EOA,  but MUST be the token holder and the
      * signer
-     * XXX: TODO: MAKE THIS view
      * @param id   the tokenId
      * @return The msg.sender that last executed or address(0) if id is unkown
      */
-    function lastExecutor(uint256 id) external returns (address);
+    function lastExecutor(uint256 id) external view returns (address);
 }
