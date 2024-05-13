@@ -51,21 +51,16 @@ contract ERC6551Account is
 
         require(_isValidSigner(msg.sender, chainId, tokenContract, tokenId), "Invalid signer");
         require(operation == 0, "Only call operations are supported");
-
         ++state;
+        _lastExecutor[tokenId] = msg.sender; // re-entrant read
 
         bool success;
         (success, result) = to.call{value: value}(data);
-
         if (!success) {
             assembly {
                 revert(add(result, 32), mload(result))
             }
         }
-
-
-        // TODO: refactor _isValidSigner so we don't double hit on this call
-        _lastExecutor[tokenId] = msg.sender;
     }
 
     function isValidSigner(

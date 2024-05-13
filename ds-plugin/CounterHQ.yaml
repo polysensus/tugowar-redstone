@@ -1,6 +1,6 @@
 kind: BuildingKind
 spec:
-  name: "tow_counter_hq_4"
+  name: "tow_counter_hq_6"
   description: "Displays current Tug of War score - an external onchain game"
   category: custom
   model: 11-03

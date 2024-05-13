@@ -1,6 +1,6 @@
 import ds from "downstream";
 
-const counterHQName = "tow_counter_hq_4"
+const counterHQName = "tow_counter_hq_6"
 const counterName = "tow_counter";
 
 export default async function update(state) {
@@ -83,7 +83,8 @@ export default async function update(state) {
                         id: "default",
                         type: "inline",
                         html: `
-                        <h3>Tug o' War gid ${gid} token: "${tokenId}"</h3>
+                        <h3>Tug o' War game ${gid} active token: "${tokenId}"</h3>
+                        <p>provide either or both of a game number or a zone number</p>
                         <p><input id="input-tokenid" type="string" name="input-tokenid"></input></p>
                         <p><input id="input-gameid" type="string" name="input-gameid"></input></p>
                         <p>War running for ${duration} blocks</p>

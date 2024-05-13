@@ -20,7 +20,7 @@ spec:
 ---
 kind: Building
 spec:
-  name: tow_counter_hq_4
+  name: "tow_counter_hq_6"
   location: [ -2, 0, 2 ]
   facingDirection: RIGHT
 
