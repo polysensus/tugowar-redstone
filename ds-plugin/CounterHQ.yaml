@@ -1,0 +1,19 @@
+kind: BuildingKind
+spec:
+  name: Tug Of War
+  description: "Displays current Tug of War score - an external onchain game"
+  category: custom
+  model: 11-03
+  color: 2
+  contract:
+    file: ./CounterHQ.sol
+  plugin:
+    file: ./CounterHQ.js
+    alwaysActive: true
+  materials:
+    - name: Green Goo
+      quantity: 10
+    - name: Blue Goo
+      quantity: 10
+    - name: Red Goo
+      quantity: 10

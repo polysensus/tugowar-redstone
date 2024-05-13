@@ -20,7 +20,7 @@
 
   // --- constants
   const abiCoder = ethers.utils.defaultAbiCoder;
-  const pollInterval = 1000 * 4;
+  const pollInterval = 1000 * 15;
 
   // contexts
   /**
@@ -56,6 +56,9 @@
   $: isGameRunning = typeof marker !== 'undefined' && marker > 5 && marker < 15;
   $: boundAddr = $boundToken?.bound;
 
+  async function refreshInfo() {
+    $active = await getActiveGame();
+  }
 
   let boundToken = writable();
   async function refreshBoundAccount(tokenId) {
@@ -174,7 +177,7 @@ async function joinSide(side) {
   <div class="flex justify-center gap-4">
     <div class="card">
 	    <!-- <header class="card-header">(header)</header> -->
-	    <section class="p-4"><input class="input" title="tokenId" type="number" on:input={(e) => refreshBoundAccount(e.target.value)}/></section>
+	    <section class="p-4"><input class="input" title="tokenId" type="string" on:input={(e) => refreshBoundAccount(e.target.value)}/></section>
       {#if $boundToken?.bound}
 	    <footer class="card-footer">
       <p class="invisible w-0" data-clipboard="boundAddress">{boundAddr}</p>
@@ -217,6 +220,10 @@ async function joinSide(side) {
   </div>
 
   {/if}
+  <div class="flex justify-center">
+  <button class="btn btn-sm preset-filled" on:click={async () => await refreshInfo()}>refresh</button>
+  </div>
+
   <div class="flex justify-center">
   <ul class="list">
     {#if !tokenId}
