@@ -1,6 +1,6 @@
 import ds from "downstream";
 
-const counterHQName = "Tug Of War"
+const counterHQName = "tow_counter_hq"
 
 export default async function update(state) {
     const mobileUnit = getMobileUnit(state);
@@ -11,8 +11,10 @@ export default async function update(state) {
     const score = getDataInt(counterHQ, "score");
     const duration = getDataInt(counterHQ, "duration");
     const gid = getDataInt(counterHQ, "gid");
+    const tokenId = getData(counterHQ, "tokenid");
     const complete = getDataInt(counterHQ, "complete");
     const winner = getData(counterHQ, "winner");
+    const started = score != 0;
 
     const bootstrapTokenId = 256;  // polyzone
 
@@ -52,11 +54,12 @@ export default async function update(state) {
                         id: "default",
                         type: "inline",
                         html: `
-                        <h3>Tug o' War ${gid}</h3>
+                        <h3>Tug o' War gid:${gid} token: ${tokenId}</h3>
                         <p>War running for ${duration} blocks</p>
+                        <p>Started ${started}</p>
                         <p>Complete ${complete}</p>
                         <p>Winner? ${winner}</p>
-                        <p>Brought to you by <a href="https://www.polysensus.com/">Polysensus</a></p>
+                        <p>Brought to you by @fupduk and <a href="https://www.polysensus.com/">Polysensus</a></p>
                         `,
 
                         buttons: [

@@ -2,8 +2,8 @@
 kind: BuildingKind
 spec:
   category: billboard
-  name: Disco Billboard
-  description: Beavers!
+  name: "tow_billboard"
+  description: "Tug O' War: Attack of the Sybils!"
   model: monitor
   plugin:
     file: ./DiscoBillboard.js

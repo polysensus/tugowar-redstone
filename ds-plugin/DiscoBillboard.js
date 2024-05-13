@@ -1,5 +1,6 @@
 import ds from 'downstream';
 
+const buildingKindName = "tow_billboard"
 const images = [
 'https://branding.polysensus.io/assets/images/splash/polysensus-white-on-black-square.jpg',
 'https://branding.polysensus.io/assets/images/splash/polysensus-black-on-white-square.jpg',
@@ -24,7 +25,7 @@ const changeImg = () => {
 
 export default async function update(state) {
     const discoBillboard = state.world?.buildings.find(
-        (b) => b.kind?.name?.value == "Disco Billboard",
+        (b) => b.kind?.name?.value == buildingKindName,
     );
 
     if (!discoBillboard){

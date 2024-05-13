@@ -6,16 +6,15 @@ import {State} from "cog/IState.sol";
 import {Schema} from "@ds/schema/Schema.sol";
 import {Actions} from "@ds/actions/Actions.sol";
 import {BuildingKind} from "@ds/ext/BuildingKind.sol";
-import {IERC6551Regsitry} from "./IERC6551Registry.sol";
+import {IERC6551Registry} from "./IERC6551Registry.sol";
 import {TugAWar, FakeTugAWar} from "./TugAWar.sol";
 import {
-  TUGAWAR_ADDR, DS_ZONE_ADDR, DZ_TOKEN_ADDR,
+  TUGAWAR_ADDR, DS_ZONE_ADDR, DS_TOKEN_ADDR,
   ERC6551REGISTRY_ADDR,
   ERC6551ACCOUNT_IMPL_ADDR,
   ERC6551_ACCOUNT_SALT
 } from "./config.sol";
 
-export constant  = 
 using Schema for State;
 
 struct GameState {
@@ -36,22 +35,22 @@ contract CounterHQ is BuildingKind {
 
     function use(Game ds, bytes24 buildingInstance, bytes24, /*actor*/ bytes calldata payload) public override {
 
-        // TugAWar taw = TugAWar(TUGAWAR_ADDR);
-        TugAWar ta = new FakeTugAWar();
+        TugAWar taw = TugAWar(TUGAWAR_ADDR);
+        // TugAWar taw = new FakeTugAWar();
 
         if ((bytes4)(payload) == this.readScore.selector) {
           (uint256 id) = abi.decode(payload[4:], (uint256));
-          GameState gs = stateForId(taw, id);
+          GameState memory gs = stateForId(taw, id);
           _updateScore(ds, taw, buildingInstance, gs);
         }
         else if ((bytes4)(payload) == this.getWinner.selector) {
           (uint256 gid) = abi.decode(payload[4:], (uint256));
-          GameState gs = winnerForGID(taw, gid);
+          GameState memory gs = winnerForGID(taw, gid);
           _updateScore(ds, taw, buildingInstance, gs);
         }
     }
 
-    function _updateScore(Game ds, TugAWar taw, bytes24 buildingInstance, GameState gs) internal {
+    function _updateScore(Game ds, TugAWar taw, bytes24 buildingInstance, GameState memory gs) internal {
 
         // set score
         ds.getDispatcher().dispatch(
@@ -64,12 +63,17 @@ contract CounterHQ is BuildingKind {
             abi.encodeCall(Actions.SET_DATA_ON_BUILDING, (buildingInstance, "gid", bytes32(gs.gid)))
         );
         ds.getDispatcher().dispatch(
-            abi.encodeCall(Actions.SET_DATA_ON_BUILDING, (buildingInstance, "winner", bytes32(gs.winner)))
+            abi.encodeCall(Actions.SET_DATA_ON_BUILDING, (buildingInstance, "tokenid", bytes32(gs.tokenId)))
         );
 
-        bool complete;
+        bytes32 winner = bytes32(uint256(uint160(gs.winner)));
+        ds.getDispatcher().dispatch(
+            abi.encodeCall(Actions.SET_DATA_ON_BUILDING, (buildingInstance, "winner", winner))
+        );
+
+        uint256 complete;
         if (gs.marker == 5 || gs.marker == 15)
-          complete = true;
+          complete = 1;
         ds.getDispatcher().dispatch(
             abi.encodeCall(Actions.SET_DATA_ON_BUILDING, (buildingInstance, "complete", bytes32(complete)))
         );
@@ -77,10 +81,10 @@ contract CounterHQ is BuildingKind {
 
     // given a downstream item token or zone id, get the game state for the
     // came currenly in progress for the holder
-    function stateForId(TugAWar taw, uint256 id) internal returns (GameState) {
-      GameState gs;
+    function stateForId(TugAWar taw, uint256 id) internal view returns (GameState memory) {
+      GameState memory gs;
       address acc = accountWithCode(id);
-      if (acc.code.lenth == 0) return gs; // all zeros
+      if (acc.code.length == 0) return gs; // all zeros
 
       (gs.gid, gs.duration, gs.pulls, gs.side, gs.tokenId, gs.marker) = taw.getGameByAccount(acc);
       return gs;
@@ -88,22 +92,22 @@ contract CounterHQ is BuildingKind {
 
 
     // Given a tugawar game id, get the winning state
-    function winnerForGID(TugAWar taw, uint256 gid) internal returns (GameState) {
-      GameState gs;
+    function winnerForGID(TugAWar taw, uint256 gid) internal view returns (GameState memory) {
+      GameState memory gs;
       (gs.gid, gs.duration, gs.pulls, gs.side, gs.tokenId, gs.winner) = taw.getWin(gid);
       return gs;
     }
 
-    function accountWithCode(uint256 id) internal returns (address) {
+    function accountWithCode(uint256 id) internal view returns (address) {
 
       address acc;
-      acc = account(DZ_TOKEN_ADDR, id);
-      if (acc.code.length)
+      acc = account(DS_TOKEN_ADDR, id);
+      if (acc.code.length == 0)
           return acc;
-      return account(DZ_ZONE_ADDR, id);
+      return account(DS_ZONE_ADDR, id);
     }
-    function account(address zoneOrTokenContract, uint256 id) internal returns (address) {
-      IERC6551Regsitry reg = IERC6551Regsitry(ERC6551REGISTRY_ADDR);
+    function account(address zoneOrTokenContract, uint256 id) internal view returns (address) {
+      IERC6551Registry reg = IERC6551Registry(ERC6551REGISTRY_ADDR);
       return reg.account(
         ERC6551ACCOUNT_IMPL_ADDR, ERC6551_ACCOUNT_SALT, block.chainid, zoneOrTokenContract, id);
     }
