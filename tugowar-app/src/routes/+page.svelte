@@ -122,9 +122,11 @@
       console.log(`tugawar signer not availble`);
       return;
     }
-
     const tugawarIface = new ethers.utils.Interface(tugawarSol.abi);
-    const encodedCall = tugawarIface.encodeFunctionData("Pull");
+    const pullFragment = tugawarIface.getFunction("Pull()");
+    if (!pullFragment) throw new Error("Pull() missing from abi");
+    const encodedCall = tugawarIface.encodeFunctionData(pullFragment);
+
     let result;
     try {
       result = await $boundAccount.execute(tugawarAddr, 0, encodedCall, 0);
@@ -154,7 +156,9 @@ async function joinSide(side) {
   if (!tugawarAddr) throw new Error(`tugawar signer not availble`);
 
   const tugawarIface = new ethers.utils.Interface(tugawarSol.abi);
-  const encodedCall = tugawarIface.encodeFunctionData("joinSide", [sideId]);
+  const joinSideFragment = tugawarIface.getFunction("joinSide(uint256)");
+  if (!joinSideFragment) throw new Error("joinSide missing from abi");
+  const encodedCall = tugawarIface.encodeFunctionData(joinSideFragment, [sideId]);
   let result;
   try {
     console.log(`boundAccount: ${$boundAccount} ${$boundAccount?.address}`)

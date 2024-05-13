@@ -13,7 +13,7 @@ import {SideInit, TugAWar} from "src/TugAWar.sol";
 contract ForkTestBase is Test {
 
   string RPC = vm.rpcUrl("rpc");
-  uint256 FORK_BLOCK = vm.envOr("FORK_BLOCK", uint256(0));
+  uint256 FORK_BLOCK = vm.envOr("FORK_BLOCK", uint256(1707936));
   uint256 fork;
 
   TugAWar taw;
