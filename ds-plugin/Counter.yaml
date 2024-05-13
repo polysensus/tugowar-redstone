@@ -1,7 +1,7 @@
 kind: BuildingKind
 spec:
-  name: "tow_counter"
-  description: "Displays the rope position"
+  name: tow_counter
+  description: "Displays a number"
   category: display
   model: default
   color: 0

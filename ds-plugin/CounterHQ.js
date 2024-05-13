@@ -1,6 +1,7 @@
 import ds from "downstream";
 
-const counterHQName = "tow_counter_hq"
+const counterHQName = "tow_counter_hq_4"
+const counterName = "tow_counter";
 
 export default async function update(state) {
     const mobileUnit = getMobileUnit(state);
@@ -8,27 +9,29 @@ export default async function update(state) {
     const counterHQ = getBuildingsByType(buildings, counterHQName)[0];
     if (!counterHQ)
       console.error(`building ${counterHQName} not found`)
-    const score = getDataInt(counterHQ, "score");
-    const duration = getDataInt(counterHQ, "duration");
-    const gid = getDataInt(counterHQ, "gid");
-    const tokenId = getData(counterHQ, "tokenid");
-    const complete = getDataInt(counterHQ, "complete");
-    const winner = getData(counterHQ, "winner");
-    const started = score != 0;
+    let score = getDataInt(counterHQ, "score");
+    let duration = getDataInt(counterHQ, "duration");
+    let gid = getDataInt(counterHQ, "gid");
+    let tokenId = getData(counterHQ, "tokenid");
+    let complete = getDataInt(counterHQ, "complete");
+    let winner = getData(counterHQ, "winner");
+    let started = score != 0;
 
     const bootstrapTokenId = 256;  // polyzone
 
-    const counterBuildings = getBuildingsByType(buildings, "counter");
+    if(!tokenId)
+      tokenId = bootstrapTokenId;
 
-    const readScore = () => {
-        const payload = ds.encodeCall("function readScore(uint256)", [bootstrapTokenId]);
+    const counterBuildings = getBuildingsByType(buildings, counterName);
+    const readScore = (tokenId) => {
+        const payload = ds.encodeCall("function readScore(uint256)", [tokenId]);
         ds.dispatch({
             name: "BUILDING_USE",
             args: [counterHQ.id, mobileUnit.id, payload],
         });
     };
-
-    const revealWinner = () => {
+  
+    const revealWinner = (gid) => {
         if (gid == 0) return;
         const payload = ds.encodeCall("function getWinner(uint256)", [gid]);
         ds.dispatch({
@@ -36,6 +39,32 @@ export default async function update(state) {
             args: [counterHQ.id, mobileUnit.id, payload],
         });
     };
+
+    const formUpdate = (values) => {
+        let formTokenId = (values["input-tokenid"] || "").toLowerCase();
+        let formGameID = (values["input-gameid"] || "").toLowerCase();
+
+        if (formTokenId != "") {
+          console.log(`update tokenId ${formTokenId}`);
+          tokenId = Number(formTokenId);
+        }
+        if (formGameID != "") {
+          console.log(`update gameid ${formGameID}`);
+          gid = Number(formGameID);
+        }
+
+        if(tokenId) {
+          console.log(`reading score for ${tokenId}`);
+          readScore(tokenId);
+        }
+        if (gid) {
+          console.log(`revealing winner for ${gid}`);
+          revealWinner(gid);
+        }
+        console.log(`tokenId: ${tokenId}, gid: ${gid}`);
+    }
+
+    const noop = () => {};
 
     return {
         version: 1,
@@ -54,27 +83,24 @@ export default async function update(state) {
                         id: "default",
                         type: "inline",
                         html: `
-                        <h3>Tug o' War gid:${gid} token: ${tokenId}</h3>
+                        <h3>Tug o' War gid ${gid} token: "${tokenId}"</h3>
+                        <p><input id="input-tokenid" type="string" name="input-tokenid"></input></p>
+                        <p><input id="input-gameid" type="string" name="input-gameid"></input></p>
                         <p>War running for ${duration} blocks</p>
                         <p>Started ${started}</p>
                         <p>Complete ${complete}</p>
                         <p>Winner? ${winner}</p>
                         <p>Brought to you by @fupduk and <a href="https://www.polysensus.com/">Polysensus</a></p>
                         `,
-
+                        submit: (values) => {
+                            formUpdate(values);
+                        },
                         buttons: [
                             {
-                                text: "What's the Score?!",
+                                text: "What's the score ?",
                                 type: "action",
-                                action: readScore,
-                            },
-                            {
-                              /*  todo: disable this once joined and while games
-                               *  in progress */
-                                text: "Reveal Winner (if complete)",
-                                type: "action",
-                                action: revealWinner,
-                            },
+                                action: noop,
+                            }
                         ],
                     },
                 ],
