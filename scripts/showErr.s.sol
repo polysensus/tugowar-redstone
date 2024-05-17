@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {console2 as console} from "forge-std/Script.sol";
+import {Script, console2 as console} from "forge-std/Script.sol";
 import "src/errors.sol";
 
-contract ShowErrScript {
+contract ShowErrScript is Script {
 
     function run() public {
       console.logBytes4(OtherGameIncomplete.selector);

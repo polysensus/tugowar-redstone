@@ -1,6 +1,6 @@
 import ds from "downstream";
 
-const counterHQName = "tow_counter_hq_6"
+const counterHQName = "tow_counter_hq_7"
 const counterName = "tow_counter";
 
 export default async function update(state) {
@@ -41,6 +41,7 @@ export default async function update(state) {
     };
 
     const formUpdate = (values) => {
+        console.log(`${JSON.stringify(values)}`);
         let formTokenId = (values["input-tokenid"] || "").toLowerCase();
         let formGameID = (values["input-gameid"] || "").toLowerCase();
 
